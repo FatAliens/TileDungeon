@@ -2,12 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using NaughtyAttributes;
 
 [RequireComponent(typeof(TimerManager), typeof(Slider))]
 public class SliderTimer : MonoBehaviour
 {
     [SerializeField] private float m_duration;
-    private Timer _timer;
+    [SerializeField] private Timer _timer;
     private TimerManager _manager;
     private Slider _slider;
 
@@ -30,6 +31,7 @@ public class SliderTimer : MonoBehaviour
         Debug.Log("Completed!");
     }
 
+    [Button]
     public void RestartTimer()
     {
         _timer.Restart();
