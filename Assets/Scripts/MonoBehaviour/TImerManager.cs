@@ -6,22 +6,9 @@ public class TimerManager : MonoBehaviour
 {
     private List<Timer> _timers = new List<Timer>();
 
-    private List<Timer> _timersToAdd = new List<Timer>();
-
     public void RegisterTimer(Timer timer)
     {
-        _timersToAdd.Add(timer);
-    }
-
-    public void CancelAllTimers()
-    {
-        foreach (Timer timer in _timers)
-        {
-            timer.Cancel();
-        }
-
-        _timers = new List<Timer>();
-        _timersToAdd = new List<Timer>();
+        _timers.Add(timer);
     }
 
     public void PauseAllTimers()
@@ -40,6 +27,14 @@ public class TimerManager : MonoBehaviour
         }
     }
 
+    public void RestartAllTimers()
+    {
+        foreach (Timer timer in _timers)
+        {
+            timer.Restart();
+        }
+    }
+
     private void Update()
     {
         UpdateAllTimers();
@@ -47,17 +42,9 @@ public class TimerManager : MonoBehaviour
 
     private void UpdateAllTimers()
     {
-        if (_timersToAdd.Count > 0)
-        {
-            _timers.AddRange(_timersToAdd);
-            _timersToAdd.Clear();
-        }
-
         foreach (Timer timer in _timers)
         {
             timer.Update();
         }
-
-        _timers.RemoveAll(t => t.IsDone);
     }
 }

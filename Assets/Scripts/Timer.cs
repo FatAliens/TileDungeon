@@ -4,31 +4,35 @@ using UnityEngine;
 public class Timer
 {
     public float Duration { get; private set; }
-    public bool IsLooped { get; set; }
+    public bool IsLooped { get; private set; }
+
     public bool IsCompleted { get; private set; }
     public bool IsPaused { get; private set; }
-    public float TimeElapsed { get; private set; }
-    public float TotalTimeElapsed { get; private set; }
 
-    public float StartTime => _startTime;
-    public float LastUpdateTime => _lastUpdateTime;
+    public float TimeElapsed { get; private set; }
+    public float StartTime { get; private set; }
 
     public event Action<Timer> OnComplete;
-    private event Action<Timer> OnUpdate;
+    public event Action<Timer> OnUpdate;
 
-    private readonly float _startTime;
+    public float WorldTime => Time.realtimeSinceStartup;
+    public float TimeDelta => WorldTime - _lastUpdateTime;
+    public float TimeRemaining => Duration - TimeElapsed;
+    public float RatioComplete => TimeElapsed / Duration;
+    public float RatioRemaining => TimeRemaining / Duration;
+
     private float _lastUpdateTime;
 
-    public Timer(float duration, Action<Timer> onComplete, Action<Timer> onUpdate,
-        bool isLooped)
+    public Timer(float duration, bool isLooped = false, Action<Timer> onComplete = null, Action<Timer> onUpdate = null)
     {
         this.Duration = duration;
         this.OnComplete = onComplete;
         this.OnUpdate = onUpdate;
         this.IsLooped = isLooped;
 
-        _startTime = worldTime;
-        _lastUpdateTime = _startTime;
+        StartTime = WorldTime;
+        _lastUpdateTime = StartTime;
+        IsPaused = true;
     }
 
     public void Pause()
@@ -39,40 +43,19 @@ public class Timer
     public void Resume()
     {
         IsPaused = false;
+        _lastUpdateTime = WorldTime;
     }
 
-    public float GetTimeElapsed()
+    public void Restart()
     {
-        if (IsCompleted || GetWorldTime() >= GetFireTime())
-        {
-            return Duration;
-        }
-
-        return GetWorldTime() - _startTime;
+        IsCompleted = false;
+        IsPaused = false;
+        _lastUpdateTime = WorldTime;
+        StartTime = WorldTime;
+        TimeElapsed = 0;
     }
 
-    public float GetTimeRemaining()
-    {
-        return Duration - GetTimeElapsed();
-    }
-
-    public float GetRatioComplete()
-    {
-        return GetTimeElapsed() / Duration;
-    }
-
-    public float GetRatioRemaining()
-    {
-        return GetTimeRemaining() / Duration;
-    }
-
-    private float worldTime => Time.realtimeSinceStartup;
-
-    private float fireTime => _startTime + Duration;
-
-    private float timeDelta => worldTime - _lastUpdateTime;
-
-    private void Update()
+    public void Update()
     {
         if (IsCompleted)
         {
@@ -81,33 +64,31 @@ public class Timer
 
         if (!IsPaused)
         {
-            _startTime += GetTimeDelta();
-            _lastUpdateTime = GetWorldTime();
-            return;
-        }
-
-        _lastUpdateTime = GetWorldTime();
-
-        if (_onUpdate != null)
-        {
-            _onUpdate(GetTimeElapsed());
-        }
-
-        if (GetWorldTime() >= GetFireTime())
-        {
-            if (_onComplete != null)
+            if (OnUpdate != null)
             {
-                _onComplete();
+                OnUpdate(this);
             }
 
-            if (IsLooped)
+            TimeElapsed += TimeDelta;
+
+            if (TimeElapsed > Duration)
             {
-                _startTime = GetWorldTime();
-            }
-            else
-            {
-                IsCompleted = true;
+                if (OnComplete != null)
+                {
+                    OnComplete(this);
+                }
+
+                if (IsLooped)
+                {
+                    StartTime = WorldTime;
+                    TimeElapsed = 0;
+                }
+                else
+                {
+                    IsCompleted = true;
+                }
             }
         }
+        _lastUpdateTime = WorldTime;
     }
 }
